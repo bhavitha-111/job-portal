@@ -169,7 +169,7 @@ function loginUser() {
         return;
     }
 
-    fetch("http://localhost:8080/users/login", {
+    fetch("https://job-portal-production-6a29.up.railway.app/", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ email, password })
@@ -210,7 +210,7 @@ function registerUser() {
         return;
     }
 
-    fetch("http://localhost:8080/users/register", {
+    fetch("https://job-portal-production-6a29.up.railway.app/", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ name, email, password, role })
@@ -248,7 +248,7 @@ function createJob() {
         return;
     }
 
-    fetch("http://localhost:8080/jobs", {
+    fetch("https://job-portal-production-6a29.up.railway.app/", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ title, company, location, description })
@@ -267,7 +267,7 @@ function createJob() {
 
 // LOAD JOBS
 function getJobs() {
-    fetch("http://localhost:8080/jobs")
+    fetch("https://job-portal-production-6a29.up.railway.app/")
     .then(res => res.json())
     .then(data => {
         let container = document.getElementById("jobList");
@@ -298,7 +298,7 @@ function applyJob() {
         return;
     }
 
-    fetch("http://localhost:8080/applications/apply", {
+    fetch("https://job-portal-production-6a29.up.railway.app/", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ userId, jobId, resumeText: resume })
