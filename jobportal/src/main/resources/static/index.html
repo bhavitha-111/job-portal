@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Job Portal</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: url('img.jpg') no-repeat center center/cover;
+            min-height: 100vh;
+            color: white;
+        }
+
+        .overlay {
+            background: rgba(0,0,0,0.7);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 500px;
+            margin: auto;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+        }
+
+        input, textarea, button {
+            width: 100%;
+            margin: 8px 0;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+        }
+
+        button {
+            background: #00c6ff;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0072ff;
+            color: white;
+        }
+
+        .job-card {
+            background: rgba(255,255,255,0.2);
+            padding: 10px;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+
+        .msg {
+            margin-top: 10px;
+            color: lightgreen;
+        }
+
+        .error {
+            color: #ff6b6b;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="overlay">
+
+<h1>🚀 Job Portal</h1>
+
+<div class="container">
+
+<!-- LOGIN -->
+<div class="card">
+    <h2>🔐 Login</h2>
+    <input id="loginEmail" placeholder="Email">
+    <input id="loginPassword" placeholder="Password">
+
+    <div id="loginError" class="error"></div>
+    <div id="loginMsg" class="msg"></div>
+
+    <button onclick="loginUser()">Login</button>
+</div>
+
+<!-- REGISTER -->
+<div class="card">
+    <h2>👤 Register</h2>
+    <input id="name" placeholder="Name">
+    <input id="email" placeholder="Email">
+    <input id="password" placeholder="Password">
+    <input id="role" placeholder="Role (USER/ADMIN)">
+
+    <div id="userError" class="error"></div>
+    <div id="userMsg" class="msg"></div>
+
+    <button onclick="registerUser()">Register</button>
+</div>
+
+<!-- CREATE JOB -->
+<div class="card">
+    <h2>💼 Create Job</h2>
+    <input id="title" placeholder="Title">
+    <input id="company" placeholder="Company">
+    <input id="location" placeholder="Location">
+    <textarea id="description" placeholder="Description"></textarea>
+
+    <div id="jobError" class="error"></div>
+    <div id="jobMsg" class="msg"></div>
+
+    <button onclick="createJob()">Create Job</button>
+</div>
+
+<!-- VIEW JOBS -->
+<div class="card">
+    <h2>📋 Available Jobs</h2>
+    <button onclick="getJobs()">Load Jobs</button>
+    <div id="jobList"></div>
+</div>
+
+<!-- APPLY -->
+<div class="card">
+    <h2>📄 Apply Job</h2>
+    <input id="userId" placeholder="User ID">
+    <input id="jobId" placeholder="Job ID">
+    <textarea id="resume" placeholder="Resume"></textarea>
+
+    <div id="applyError" class="error"></div>
+    <div id="applyMsg" class="msg"></div>
+
+    <button onclick="applyJob()">Apply</button>
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+// LOGIN
+function loginUser() {
+
+    let email = document.getElementById("loginEmail").value.trim();
+    let password = document.getElementById("loginPassword").value.trim();
+
+    if (!email || !password) {
+        document.getElementById("loginError").innerText = "⚠️ All fields required";
+        return;
+    }
+
+    fetch("http://localhost:8080/users/login", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ email, password })
+    })
+    .then(res => res.json())
+    .then(user => {
+
+        if (user && user.id) {
+
+            // ✅ store user
+            localStorage.setItem("user", JSON.stringify(user));
+
+            document.getElementById("loginMsg").innerText =
+                "✅ Logged in as " + user.role;
+
+            document.getElementById("loginError").innerText = "";
+
+        } else {
+            document.getElementById("loginError").innerText = "❌ Invalid login";
+        }
+    })
+    .catch(() => {
+        document.getElementById("loginError").innerText = "❌ Backend not reachable";
+    });
+}
+
+
+// REGISTER
+function registerUser() {
+
+    let name = document.getElementById("name").value.trim();
+    let email = document.getElementById("email").value.trim();
+    let password = document.getElementById("password").value.trim();
+    let role = document.getElementById("role").value.trim();
+
+    if (!name || !email || !password || !role) {
+        document.getElementById("userError").innerText = "⚠️ All fields required";
+        return;
+    }
+
+    fetch("http://localhost:8080/users/register", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ name, email, password, role })
+    })
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById("userMsg").innerText =
+            "✅ Registered! ID: " + data.id;
+        document.getElementById("userError").innerText = "";
+    })
+    .catch(() => {
+        document.getElementById("userError").innerText = "❌ Backend error";
+    });
+}
+
+
+// CREATE JOB (ADMIN ONLY)
+function createJob() {
+
+    let user = JSON.parse(localStorage.getItem("user"));
+
+    if (!user || user.role !== "ADMIN") {
+        document.getElementById("jobError").innerText =
+            "❌ Only ADMIN can create jobs";
+        return;
+    }
+
+    let title = document.getElementById("title").value.trim();
+    let company = document.getElementById("company").value.trim();
+    let location = document.getElementById("location").value.trim();
+    let description = document.getElementById("description").value.trim();
+
+    if (!title || !company || !location || !description) {
+        document.getElementById("jobError").innerText = "⚠️ All fields required";
+        return;
+    }
+
+    fetch("http://localhost:8080/jobs", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ title, company, location, description })
+    })
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById("jobMsg").innerText =
+            "✅ Job Created! ID: " + data.id;
+        document.getElementById("jobError").innerText = "";
+    })
+    .catch(() => {
+        document.getElementById("jobError").innerText = "❌ Backend error";
+    });
+}
+
+
+// LOAD JOBS
+function getJobs() {
+    fetch("http://localhost:8080/jobs")
+    .then(res => res.json())
+    .then(data => {
+        let container = document.getElementById("jobList");
+        container.innerHTML = "";
+
+        data.forEach(job => {
+            container.innerHTML += `
+                <div class="job-card">
+                    <b>${job.title}</b><br>
+                    ${job.company} - ${job.location}
+                </div>
+            `;
+        });
+    });
+}
+
+
+// APPLY JOB
+function applyJob() {
+
+    let userId = document.getElementById("userId").value.trim();
+    let jobId = document.getElementById("jobId").value.trim();
+    let resume = document.getElementById("resume").value.trim();
+
+    if (!userId || !jobId || !resume) {
+        document.getElementById("applyError").innerText =
+            "⚠️ All fields required";
+        return;
+    }
+
+    fetch("http://localhost:8080/applications/apply", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ userId, jobId, resumeText: resume })
+    })
+    .then(res => res.json())
+    .then(() => {
+        document.getElementById("applyMsg").innerText =
+            "✅ Applied Successfully!";
+        document.getElementById("applyError").innerText = "";
+    });
+}
+
+</script>
+
+</body>
+</html>
